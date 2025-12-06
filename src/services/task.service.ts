@@ -1,3 +1,4 @@
+import { endOfDay, startOfDay } from "date-fns";
 import type { QueryFilter } from "mongoose";
 import { BAD_REQUEST, NOT_FOUND } from "stoker/http-status-codes";
 import Task, { type mTask } from "@/db/models/task.model.js";
@@ -59,13 +60,13 @@ class TaskService {
   async getAll(query: AllTasksQuery, userId: string) {
     const {
       status,
-      sortOrder,
+      sortOrder = "asc",
       date,
-      limit,
-      page,
+      limit = 10, 
+      page = 1, 
       priority,
       search,
-      sortBy,
+      sortBy = "startTime", 
       completed,
     } = query;
 
@@ -83,10 +84,11 @@ class TaskService {
     };
 
     if (date) {
-      const start = new Date(date);
-      const end = new Date(date);
-      end.setDate(end.getDate() + 1);
-      filterQuery.date = { $gte: start, $lt: end };
+      const targetDate = new Date(date);
+      filterQuery.startTime = {
+        $gte: startOfDay(targetDate),
+        $lte: endOfDay(targetDate),
+      };
     }
 
     if (search) {
@@ -94,10 +96,8 @@ class TaskService {
       filterQuery.$or = [{ title: pattern }, { description: pattern }];
     }
 
-    const tasks = Task.find(filterQuery)
-      .populate<{
-        user: BaseTask;
-      }>(
+    const tasksQuery = Task.find(filterQuery)
+      .populate<{ user: BaseTask }>(
         "user",
         "-refreshToken -comparePassword -__v -password -otpSecret -permissions -createdAt -updatedAt -twoFactorEnabled -isVerified -profileImg",
       )
@@ -105,12 +105,14 @@ class TaskService {
       .sort(sortQuery)
       .skip(skip)
       .limit(limit)
-      .lean()
-      .exec();
+      .lean();
 
-    const total = Task.countDocuments(filterQuery).exec();
+    const countQuery = Task.countDocuments(filterQuery);
 
-    const [tasksList, totalCount] = await Promise.all([tasks, total]);
+    const [tasksList, totalCount] = await Promise.all([
+      tasksQuery.exec(),
+      countQuery.exec(),
+    ]);
 
     const hasNextPage = totalCount > page * limit;
     const hasPrevPage = page > 1;

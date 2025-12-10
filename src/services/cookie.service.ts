@@ -10,7 +10,7 @@ class CookieService {
   private cookieOptions = {
     httpOnly: true,
     secure: env.ENV === "production",
-    sameSite: "Lax",
+    sameSite: env.ENV === "production" ? "None" : "Lax",
   } as const;
 
   async setAccessCookie(c: Context, accessToken: string): Promise<void> {

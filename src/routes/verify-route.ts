@@ -35,7 +35,9 @@ const app = new Hono<AppBindings>()
 
       const decodedToken = await TokenService.verifyOtpToken(otpToken);
 
-      const user = await UserModel.findById(decodedToken.id).select("+otpSecret");
+      const user = await UserModel.findById(decodedToken.id).select(
+        "+otpSecret +isVerified",
+      );
 
       if (!user) {
         throw new AuthError("User not found.", FORBIDDEN);
@@ -54,6 +56,11 @@ const app = new Hono<AppBindings>()
         twoFactorEnabled: user.twoFactorEnabled,
       });
 
+      if (!user.isVerified) {
+        user.isVerified = true;
+        await user.save();
+      }
+
       const updatedUser = await userService.addRefreshToken(
         user._id.toString(),
         refreshToken,
@@ -66,7 +73,7 @@ const app = new Hono<AppBindings>()
       return c.json(
         {
           success: true,
-          message: "OTP verification successful. Welcome!",
+          message: "OTP verification successful!",
           data: { accessToken },
         },
         OK,

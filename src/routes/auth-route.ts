@@ -130,7 +130,7 @@ app.post(
     const user = await userService.verifyCredentials(email, password);
 
     // Handle 2FA
-    if (user.twoFactorEnabled) {
+    if (user.twoFactorEnabled || !user.isVerified) {
       const otpToken = await TokenService.createOtpToken({
         id: user._id,
         role: user.role,
@@ -177,7 +177,7 @@ app.post(
       {
         success: true,
         message: "Signin successful",
-        data: { accessToken, twoFactorEnabled: false, user },
+        data: { accessToken, twoFactorEnabled: false, user: userService.profile(user) },
       },
       OK,
     );

@@ -1,9 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import nodemailer from "nodemailer";
 import env from "@/lib/env-validator.js";
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const __filename = fileURLToPath(import.meta.url);
+
+const __dirname = path.dirname(__filename);
 
 type EmailTemplate = "welcome" | "forgot-password" | "password-reset" | "otp";
 
@@ -31,12 +34,14 @@ export class Mailer {
     this.templateCache = new Map();
     this.transporter = nodemailer.createTransport({
       host: env.SMTP_HOST,
-      port: 587, // Standard secure port, use 465 if secure: true
+      port: 2525,
       secure: false,
       auth: {
         user: env.SMTP_USER,
         pass: env.SMTP_PASS,
       },
+      logger: true,
+      debug: true,
     });
   }
 
@@ -49,7 +54,6 @@ export class Mailer {
   ): Promise<string> {
     let htmlContent = this.templateCache.get(templateName);
 
-    // 1. Load from disk if not in cache
     if (!htmlContent) {
       const templatePath = path.join(
         __dirname,
@@ -64,7 +68,6 @@ export class Mailer {
       }
     }
 
-    // 2. Replace {{ key }} with payload values using a single regex pass
     return htmlContent.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key) => {
       return payload[key] !== undefined ? String(payload[key]) : "";
     });
@@ -76,7 +79,6 @@ export class Mailer {
     template,
     payload,
   }: EmailOptions): Promise<void> {
-    // 1. DEV MODE: Log to console instead of sending real email
     if (env.ENV === "development") {
       console.log(`\n📧 [DEV EMAIL] To: ${to} | Template: ${template}`);
       console.log(`📦 Payload:`, payload);
@@ -91,7 +93,7 @@ export class Mailer {
       const emailHtml = await this.loadAndProcessTemplate(template, payload);
 
       const mailOptions = {
-        from: '"TaskMint" <no-reply@taskmint.com>',
+        from: `"TaskMint" <${env.EMAIL_ADDR}>`,
         to,
         subject,
         html: emailHtml,
@@ -101,7 +103,6 @@ export class Mailer {
       console.log("Email sent successfully: %s", info.messageId);
     } catch (error) {
       console.error("Error sending email:", error);
-      // Don't crash the app if email fails, just log it
       throw new Error("Failed to send email.");
     }
   }

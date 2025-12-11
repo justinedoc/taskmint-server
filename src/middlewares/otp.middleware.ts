@@ -7,7 +7,6 @@ import { TokenService } from "@/services/token.service.js";
 export async function otpMiddleware(c: Context, next: Next) {
   const otpToken = await cookieService.getOtpCookie(c);
 
-
   if (!otpToken) {
     throw new AuthError(
       "Authentication required: No temporary session token found.",

@@ -133,7 +133,7 @@ const app = new Hono<AppBindings>()
   .post("/toggle-2fa", requirePermission(Permission.SELF_UPDATE), async (c) => {
     const { id: userId } = c.get("user");
 
-    const user = await UserModel.findById(userId);
+    const user = await UserModel.findById(userId).select("+password");
 
     if (!user) {
       return c.json({ success: false, message: "User not found." }, NOT_FOUND);

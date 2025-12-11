@@ -1,9 +1,9 @@
 import bcrypt from "bcryptjs";
 import type { Types } from "mongoose";
 import mongoose, { type Document } from "mongoose";
+import { CRYPTO } from "@/index.js";
 import { RolePermissions } from "@/lib/permissions.js";
 import type { User } from "@/schemas/user.schema.js";
-import { CRYPTO } from "@/index.js";
 
 interface IUserMethods {
   comparePassword(password: string): Promise<boolean>;

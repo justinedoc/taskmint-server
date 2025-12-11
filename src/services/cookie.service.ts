@@ -11,6 +11,7 @@ class CookieService {
     httpOnly: true,
     secure: env.ENV === "production",
     sameSite: env.ENV === "production" ? "None" : "Lax",
+    partitioned: true
   } as const;
 
   async setAccessCookie(c: Context, accessToken: string): Promise<void> {

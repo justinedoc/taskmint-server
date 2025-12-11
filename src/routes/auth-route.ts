@@ -50,7 +50,7 @@ app.post("/google", zValidator("json", zGoogleAuth), async (c) => {
   });
 
   await userService.addRefreshToken(user._id.toString(), refreshToken);
-  await cookieService.setAuthCookies(c, { refreshToken, accessToken });
+  await cookieService.setRefreshCookie(c, refreshToken);
 
   console.info(`${user.fullname} logged in via Google`);
 
@@ -169,7 +169,7 @@ app.post(
     });
 
     await userService.addRefreshToken(user._id.toString(), refreshToken);
-    await cookieService.setAuthCookies(c, { refreshToken, accessToken });
+    await cookieService.setRefreshCookie(c, refreshToken);
 
     console.info(`${user.fullname} logged in`);
 
@@ -177,7 +177,11 @@ app.post(
       {
         success: true,
         message: "Signin successful",
-        data: { accessToken, twoFactorEnabled: false, user: userService.profile(user) },
+        data: {
+          accessToken,
+          twoFactorEnabled: false,
+          user: userService.profile(user),
+        },
       },
       OK,
     );
@@ -218,7 +222,7 @@ app.post("/refresh", createRateLimiter({ limit: 20 }), async (c) => {
     newRefreshToken,
   );
 
-  // Set Cookies
+  // Set Cookie
   await cookieService.setRefreshCookie(c, newRefreshToken);
 
   return c.json(

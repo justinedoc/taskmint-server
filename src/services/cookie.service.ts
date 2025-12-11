@@ -11,7 +11,7 @@ class CookieService {
     httpOnly: true,
     secure: env.ENV === "production",
     sameSite: env.ENV === "production" ? "None" : "Lax",
-    partitioned: true
+    partitioned: true,
   } as const;
 
   async setAccessCookie(c: Context, accessToken: string): Promise<void> {
@@ -45,15 +45,6 @@ class CookieService {
       ...this.cookieOptions,
       maxAge: this.OTP_COOKIE_MAX_AGE,
     });
-  }
-
-  async setAuthCookies(
-    c: Context,
-    tokens: { accessToken: string; refreshToken: string },
-  ): Promise<void> {
-    await Promise.all([
-      this.setRefreshCookie(c, tokens.refreshToken),
-    ]);
   }
 
   deleteAccessCookie(c: Context): void {

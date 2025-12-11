@@ -67,7 +67,7 @@ const app = new Hono<AppBindings>()
       );
       if (!updatedUser) throw new AuthError("Failed to update refresh token");
 
-      await cookieService.setAuthCookies(c, { refreshToken, accessToken });
+      await cookieService.setRefreshCookie(c, refreshToken);
       cookieService.deleteOtpCookie(c);
 
       return c.json(
